@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Basic Calculator</title>
+
+    <style>
+        /* ---------- BASIC PAGE STYLING ---------- */
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            display: flex;
+            /* centers the calculator horizontally */
+            justify-content: center;
+            /* centers horizontally */
+            align-items: center;
+            /* centers vertically */
+            min-height: 100vh;
+            /* make the body full screen height */
+            margin: 0;
+            /* remove default margin */
+            background: #f5f5f5;
+            /* light gray background */
+        }
+
+        /* container for the calculator */
+        .calc {
+            width: 260px;
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            /* rounded corners */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            /* soft shadow */
+        }
+
+        /* the display area at the top */
+        .screen {
+            width: 100%;
+            height: 48px;
+            font-size: 24px;
+            /* big digits */
+            text-align: right;
+            /* numbers align to the right like real calculators */
+            padding: 8px 10px;
+            box-sizing: border-box;
+            /* includes padding in width calculation */
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        /* button grid layout */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            /* 4 columns of equal width */
+            gap: 8px;
+            /* space between buttons */
+            margin-top: 10px;
+        }
+
+        /* basic button style */
+        button {
+            height: 44px;
+            border: none;
+            border-radius: 8px;
+            background: #eee;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* color for operator buttons (+ - * /) */
+        .op {
+            background: #e8f0ff;
+        }
+
+        /* buttons that span 2 columns, like C or 0 */
+        .wide {
+            grid-column: span 2;
+        }
+
+        /* equals button special color */
+        .equals {
+            background: #dff6e3;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Calculator container -->
+    <div class="calc">
+        <!-- Display box (readonly, we’ll fill it with JS) -->
+        <input id="screen" class="screen" placeholder="0" value="" readonly />
+
+        <!-- Button grid -->
+        <div class="grid">
+            <!-- top row -->
+            <button class="wide" data-act="clear">C</button>
+            <button data-act="back">⌫</button>
+            <button class="op" data-val="/">÷</button>
+
+            <!-- next rows: digits and operators -->
+            <button data-val="7">7</button>
+            <button data-val="8">8</button>
+            <button data-val="9">9</button>
+            <button class="op" data-val="*">×</button>
+
+            <button data-val="4">4</button>
+            <button data-val="5">5</button>
+            <button data-val="6">6</button>
+            <button class="op" data-val="-">−</button>
+
+            <button data-val="1">1</button>
+            <button data-val="2">2</button>
+            <button data-val="3">3</button>
+            <button class="op" data-val="+">+</button>
+
+            <!-- bottom row -->
+            <button class="wide" data-val="0">0</button>
+            <button data-val=".">.</button>
+            <button class="equals" data-act="equals">=</button>
+        </div>
+    </div>
+
+    <script>
+        /* --------- GET ELEMENTS FROM THE PAGE --------- */
+        const screen = document.getElementById('screen'); // reference to the display
+        const grid = document.querySelector('.grid');     // reference to the button area
+
+        // helper function: check if a character is an operator
+        const isOp = (c) => ['+', '-', '*', '/'].includes(c);
+
+        /* --------- ADD A CHARACTER TO THE SCREEN --------- */
+        function append(v) {
+            const s = screen.value;          // current expression on screen
+            const last = s.slice(-1);        // last character user typed
+
+            // (1) Prevent entering two operators in a row, e.g., "5++"
+            // Allow "-" after an operator to make negative numbers (e.g., "5*-2")
+            if (isOp(v) && (s === '' || isOp(last))) {
+                if (!(v === '-' && isOp(last))) return; // cancel if invalid operator sequence
+            }
+
+            // (2) Prevent multiple dots in a single number like "3.1.4"
+            if (v === '.') {
+                const chunk = s.split(/[+\-*\/]/).pop(); // take the last number part
+                if (chunk.includes('.')) return;         // if it already has a dot, skip
+                if (chunk === '') screen.value = s + '0'; // start "0." if dot is first
+            }
+
+            // (3) Finally, add the pressed value
+            screen.value += v;
+        }
+
+        /* --------- DELETE LAST CHARACTER --------- */
+        function back() {
+            screen.value = screen.value.slice(0, -1);
+        }
+
+        /* --------- CLEAR EVERYTHING --------- */
+        function clearAll() {
+            screen.value = '';
+        }
+
+        /* --------- COMPUTE THE RESULT --------- */
+        function equals() {
+
+            // check if the screen is empty
+            if (!screen.value) {
+                return;
+            }
+
+            screen.value = "hello world"
+        }
+
+        /* --------- HANDLE BUTTON CLICKS --------- */
+        grid.addEventListener('click', (e) => {
+            const btn = e.target.closest('button'); // find what button was clicked
+            if (!btn) return;
+
+            const val = btn.getAttribute('data-val'); // e.g., "7" or "+"
+            const act = btn.getAttribute('data-act'); // e.g., "clear", "back", "equals"
+
+            if (val) append(val);           // if it’s a digit/operator
+            else if (act === 'back') back(); // delete last
+            else if (act === 'clear') clearAll(); // clear all
+            else if (act === 'equals') equals(); // compute
+        });
+
+        /* --------- KEYBOARD SHORTCUTS --------- */
+        window.addEventListener('keydown', (e) => {
+            const k = e.key;
+
+            // If the key is a number or operator, add it
+            if (/^[0-9]$/.test(k) || ['+', '-', '*', '/', '.'].includes(k)) append(k);
+            // Enter or "=" runs the equals function
+            else if (k === 'Enter' || k === '=') equals();
+            // Backspace deletes one character
+            else if (k === 'Backspace') back();
+            // Escape clears all
+            else if (k === 'Escape') clearAll();
+        });
+    </script>
+</body>
+
+</html>
